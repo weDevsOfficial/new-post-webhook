@@ -1,0 +1,14 @@
+{
+    "name": "wedevs/new-post-webhook",
+    "description": "Sends a webhook request when a new post is published",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name": "Tareq Hasan",
+            "email": "tareq@wedevs.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {}
+}
