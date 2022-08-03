@@ -8,7 +8,15 @@ Sends a webhook request when a new post is published.
  - Navigate to **Settings** > **Writing** settings and add the webhook URL.
  - It'll send the webhook to that URL when a new post is created.
 
+## Installing with composer
+
+```bash
+composer require wedevs/new-post-webhook
+```
+
 ## Request Format
+
+The following format will be posted in the webhook.
 
 ```json
 {
