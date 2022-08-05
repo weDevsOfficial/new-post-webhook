@@ -23,6 +23,10 @@ class New_Post_Webhook {
         add_action( 'transition_post_status', [ $this, 'fire_hook' ], 99, 3 );
 
         add_action( 'admin_init', [ $this, 'add_settings_field' ] );
+        add_action( 'admin_footer-options-writing.php', [ $this, 'admin_footer_script' ] );
+
+        add_action( 'wp_ajax_new-post-webhook-test', [ $this, 'send_test_event' ] );
+
         add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), [ $this, 'add_action_links' ] );
     }
 
@@ -39,6 +43,11 @@ class New_Post_Webhook {
         return !empty( $url );
     }
 
+    /**
+     * Get the webhook URL
+     *
+     * @return string
+     */
     public function get_webhook_url() {
         return get_option( 'new_post_webhook', '' );
     }
@@ -133,6 +142,7 @@ class New_Post_Webhook {
 
         echo '<input type="url" placeholder="https://" name="new_post_webhook" id="new_post_webhook" value="' . $url . '" class="regular-text" />';
         echo '<p class="description">Enter the webhook URL to ping when a new post is published. Keep empty to disable.</p>';
+        echo '<p><button type="button" id="btn-post-webhook-test">Send a Test</button></p>';
     }
 
     /**
@@ -148,6 +158,68 @@ class New_Post_Webhook {
        );
 
        return array_merge( $actions, $link );
+    }
+
+    /**
+     * Send a test event via AJAX
+     *
+     * @return void
+     */
+    public function send_test_event() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return wp_send_json_error( 'You don\'t have permission.');
+        }
+
+        $url = $this->get_webhook_url();
+        $posts = get_posts( [
+            'numberposts' => 1,
+            'post_type'   => 'post',
+        ] );
+
+        if ( ! $posts ) {
+            return wp_send_json_error( 'No posts found to send a test.');
+        }
+
+        wp_remote_post( $url, [
+            'headers' => [
+                'content-type' => 'application/json',
+            ],
+            'timeout'  => 30,
+            'body'     => json_encode( $this->get_post_data( $posts[0] ) )
+        ] );
+
+        wp_send_json_success( 'Test webhook sent successfully.' );
+    }
+
+    /**
+     * Perform the test event
+     *
+     * @return void
+     */
+    public function admin_footer_script() {
+        ?>
+        <script type="text/javascript">
+            jQuery(function($) {
+                $('button#btn-post-webhook-test').on('click', function(e) {
+                    e.preventDefault();
+
+                    var url = $('#new_post_webhook').val().trim();
+
+                    if (!url) {
+                        alert( 'Please provide a valid URL' );
+                    } else {
+                        $.post(ajaxurl, {
+                            action: 'new-post-webhook-test'
+                        }, function(data, textStatus, xhr) {
+                            alert(data.data);
+                        }).fail(function() {
+                            alert('Sending request failed');
+                        });
+                    }
+                });
+            });
+        </script>
+        <?php
     }
 }
 
